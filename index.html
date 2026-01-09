@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Tennis Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: 
+                linear-gradient(rgba(20, 20, 40, 0.85), rgba(20, 20, 40, 0.85)),
+                repeating-linear-gradient(
+                    90deg,
+                    #2c3e50 0px,
+                    #34495e 2px,
+                    #2c3e50 4px
+                ),
+                linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at top, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 30%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .controls, .scores, .high-scores, .instructions, .game-over {
+            position: relative;
+            z-index: 1;
+        }
+        #gameCanvas {
+            position: relative;
+            z-index: 1;
+        }
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        select, input, button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #gameCanvas {
+            border: 4px solid white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
+        }
+        .scores {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 40px;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .score-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .high-scores {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            min-width: 300px;
+        }
+        .high-scores h3 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .high-score-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+        .game-over h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .game-over button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <strong>Controls:</strong> Player 1 (Left) - Arrow Up/Down | Player 2 (Right) - W/S keys
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="gameMode">Game Mode:</label>
+            <select id="gameMode">
+                <option value="single">vs Computer</option>
+                <option value="two-player">Two Players</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="difficulty">Difficulty:</label>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="winPoints">Points to Win:</label>
+            <input type="number" id="winPoints" value="11" min="1" max="21">
+        </div>
+        <button id="startBtn">Start Game</button>
+        <button id="resetBtn" style="background: #f44336; display: none;">Reset Game</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <div class="scores">
+        <div class="score-item">
+            <div>Player 1</div>
+            <div class="score-value" id="player1Score">0</div>
+        </div>
+        <div class="score-item">
+            <div id="player2Label">Computer</div>
+            <div class="score-value" id="player2Score">0</div>
+        </div>
+    </div>
+
+    <div class="high-scores">
+        <h3>High Scores (vs Computer)</h3>
+        <div id="highScoresList"></div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2 id="winnerText">Player 1 Wins!</h2>
+        <button onclick="location.reload()">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Audio context for sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playPaddleHit() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 350;
+            gain.gain.value = 0.15;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+        
+        function playWallHit() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 180;
+            gain.gain.value = 0.08;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            osc.stop(audioCtx.currentTime + 0.08);
+        }
+        
+        function playScore() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 440;
+            gain.gain.value = 0.12;
+            osc.start();
+            osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // Game state
+        let gameRunning = false;
+        let gameMode = 'single';
+        let difficulty = 'medium';
+        let winPoints = 11;
+        
+        // Paddles
+        const paddleWidth = 15;
+        const paddleHeight = 80;
+        let paddle1Y = canvas.height / 2 - paddleHeight / 2;
+        let paddle2Y = canvas.height / 2 - paddleHeight / 2;
+        const paddleSpeed = 7;
+        
+        // Ball
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        const ballRadius = 8;
+        let ballSpeedX = 5;
+        let ballSpeedY = 3;
+        let rallyCount = 0; // Track hits for speed increase
+        
+        // Scores
+        let score1 = 0;
+        let score2 = 0;
+        
+        // Controls
+        const keys = {};
+        
+        // High scores
+        let highScores = JSON.parse(localStorage.getItem('tableTennisScores') || '[]');
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+        
+        document.getElementById('gameMode').addEventListener('change', (e) => {
+            gameMode = e.target.value;
+            document.getElementById('player2Label').textContent = 
+                gameMode === 'single' ? 'Computer' : 'Player 2';
+            document.querySelector('.high-scores h3').textContent = 
+                gameMode === 'single' ? 'High Scores (vs Computer)' : 'Recent Games (2 Player)';
+        });
+        
+        document.getElementById('difficulty').addEventListener('change', (e) => {
+            difficulty = e.target.value;
+        });
+        
+        document.getElementById('winPoints').addEventListener('change', (e) => {
+            winPoints = parseInt(e.target.value) || 11;
+        });
+        
+        function startGame() {
+            gameRunning = true;
+            score1 = 0;
+            score2 = 0;
+            rallyCount = 0;
+            updateScores();
+            resetBall();
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('resetBtn').style.display = 'inline-block';
+            gameLoop();
+        }
+        
+        function resetGame() {
+            gameRunning = false;
+            score1 = 0;
+            score2 = 0;
+            rallyCount = 0;
+            paddle1Y = canvas.height / 2 - paddleHeight / 2;
+            paddle2Y = canvas.height / 2 - paddleHeight / 2;
+            updateScores();
+            resetBall();
+            draw();
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('resetBtn').style.display = 'none';
+        }
+        
+        function resetBall() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            rallyCount = 0;
+            
+            // Random serve direction and angle
+            const baseSpeed = 5;
+            const angle = (Math.random() - 0.5) * Math.PI / 4; // Less extreme angles
+            const direction = Math.random() < 0.5 ? 1 : -1;
+            ballSpeedX = direction * baseSpeed * Math.cos(angle);
+            ballSpeedY = baseSpeed * Math.sin(angle);
+        }
+        
+        function updateScores() {
+            document.getElementById('player1Score').textContent = score1;
+            document.getElementById('player2Score').textContent = score2;
+        }
+        
+        function updateHighScores() {
+            if (gameMode === 'single') {
+                highScores.push({ 
+                    player1: score1, 
+                    player2: score2, 
+                    difficulty: difficulty,
+                    date: new Date().toLocaleDateString()
+                });
+                highScores.sort((a, b) => b.player1 - a.player1);
+                highScores = highScores.slice(0, 5);
+                localStorage.setItem('tableTennisScores', JSON.stringify(highScores));
+            }
+            displayHighScores();
+        
+        // Draw initial canvas state
+        draw();
+        }
+        
+        function displayHighScores() {
+            const list = document.getElementById('highScoresList');
+            if (highScores.length === 0) {
+                list.innerHTML = '<div style="text-align: center; opacity: 0.6;">No scores yet</div>';
+                return;
+            }
+            list.innerHTML = highScores.map((score, i) => `
+                <div class="high-score-entry">
+                    <span>${i + 1}. ${score.difficulty} - ${score.date}</span>
+                    <span>${score.player1} - ${score.player2}</span>
+                </div>
+            `).join('');
+        }
+        
+        displayHighScores();
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function update() {
+            // Player 1 controls (Arrow keys)
+            if (keys['ArrowUp'] && paddle1Y > 0) {
+                paddle1Y -= paddleSpeed;
+            }
+            if (keys['ArrowDown'] && paddle1Y < canvas.height - paddleHeight) {
+                paddle1Y += paddleSpeed;
+            }
+            
+            // Player 2 controls
+            if (gameMode === 'two-player') {
+                // WASD for player 2
+                if (keys['w'] && paddle2Y > 0) {
+                    paddle2Y -= paddleSpeed;
+                }
+                if (keys['s'] && paddle2Y < canvas.height - paddleHeight) {
+                    paddle2Y += paddleSpeed;
+                }
+            } else {
+                // AI opponent with varying difficulty
+                let aiSpeed, reactionThreshold, shouldReact;
+                
+                if (difficulty === 'easy') {
+                    aiSpeed = 3;
+                    reactionThreshold = 30; // Large dead zone
+                    // Easy AI only reacts 70% of the time
+                    shouldReact = ballSpeedX > 0 && Math.random() < 0.7;
+                } else if (difficulty === 'medium') {
+                    aiSpeed = 5.5;
+                    reactionThreshold = 15; // Medium dead zone
+                    // Medium AI reacts 90% of the time
+                    shouldReact = ballSpeedX > 0 && Math.random() < 0.9;
+                } else { // hard
+                    aiSpeed = 8;
+                    reactionThreshold = 5; // Very precise
+                    // Hard AI always reacts
+                    shouldReact = ballSpeedX > 0;
+                }
+                
+                const paddleCenter = paddle2Y + paddleHeight / 2;
+                const targetY = ballY;
+                
+                if (shouldReact) {
+                    if (paddleCenter < targetY - reactionThreshold) {
+                        paddle2Y = Math.min(paddle2Y + aiSpeed, canvas.height - paddleHeight);
+                    } else if (paddleCenter > targetY + reactionThreshold) {
+                        paddle2Y = Math.max(paddle2Y - aiSpeed, 0);
+                    }
+                }
+            }
+            
+            // Ball movement
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+            
+            // Ball collision with top/bottom walls
+            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+                ballSpeedY = -ballSpeedY;
+                playWallHit();
+            }
+            
+            // Ball collision with left paddle (Player 1)
+            if (ballX - ballRadius < paddleWidth + 20 && 
+                ballY > paddle1Y && ballY < paddle1Y + paddleHeight &&
+                ballSpeedX < 0) {
+                
+                // Calculate hit position for spin effect
+                const hitPos = (ballY - (paddle1Y + paddleHeight / 2)) / (paddleHeight / 2);
+                ballSpeedX = Math.abs(ballSpeedX);
+                ballSpeedY += hitPos * 3;
+                
+                // Gradually increase speed during rally (realistic)
+                rallyCount++;
+                if (rallyCount % 3 === 0) {
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                }
+                
+                playPaddleHit();
+            }
+            
+            // Ball collision with right paddle (Player 2/AI)
+            if (ballX + ballRadius > canvas.width - paddleWidth - 20 && 
+                ballY > paddle2Y && ballY < paddle2Y + paddleHeight &&
+                ballSpeedX > 0) {
+                
+                const hitPos = (ballY - (paddle2Y + paddleHeight / 2)) / (paddleHeight / 2);
+                ballSpeedX = -Math.abs(ballSpeedX);
+                ballSpeedY += hitPos * 3;
+                
+                rallyCount++;
+                if (rallyCount % 3 === 0) {
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                }
+                
+                playPaddleHit();
+            }
+            
+            // Scoring - Player 2 scores
+            if (ballX < 0) {
+                score2++;
+                updateScores();
+                playScore();
+                checkWin();
+                resetBall();
+            }
+            
+            // Scoring - Player 1 scores
+            if (ballX > canvas.width) {
+                score1++;
+                updateScores();
+                playScore();
+                checkWin();
+                resetBall();
+            }
+        }
+        
+        function checkWin() {
+            if (score1 >= winPoints || score2 >= winPoints) {
+                gameRunning = false;
+                const winner = score1 >= winPoints ? 'Player 1' : 
+                    (gameMode === 'single' ? 'Computer' : 'Player 2');
+                document.getElementById('winnerText').textContent = winner + ' Wins!';
+                document.getElementById('gameOver').style.display = 'block';
+                document.getElementById('resetBtn').style.display = 'none';
+                document.getElementById('startBtn').style.display = 'inline-block';
+                updateHighScores();
+            }
+        }
+        
+        function draw() {
+            // Green table
+            ctx.fillStyle = '#2d8659';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Center line
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Table edge lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            
+            // Signature in bottom-right corner
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('M.A.', canvas.width - 10, canvas.height - 10);
+            
+            // Paddles (beige)
+            ctx.fillStyle = '#d2b48c';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(20, paddle1Y, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - 20 - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
+            ctx.shadowBlur = 0;
+            
+            // Ball (white) with shadow
+            ctx.fillStyle = 'white';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    </script>
+</body>
+</html>
