@@ -2,579 +2,267 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Table Tennis Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pro Vertical Tennis</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Classic Serif Font for Signature */
+        @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+        
         body {
-            font-family: 'Arial', sans-serif;
-            background: 
-                linear-gradient(rgba(20, 20, 40, 0.85), rgba(20, 20, 40, 0.85)),
-                repeating-linear-gradient(
-                    90deg,
-                    #2c3e50 0px,
-                    #34495e 2px,
-                    #2c3e50 4px
-                ),
-                linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            position: relative;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #0f0f1a;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            height: 100vh;
             color: white;
+            overflow: hidden;
+            padding: 10px 15px;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
+
+        .controls { 
+            background: rgba(255, 255, 255, 0.08); 
+            padding: 6px 10px; 
+            border-radius: 12px; 
+            display: flex; 
+            gap: 6px; 
+            margin-bottom: 8px;
             width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at top, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 30%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .controls, .scores, .high-scores, .instructions, .game-over {
-            position: relative;
-            z-index: 1;
-        }
-        #gameCanvas {
-            position: relative;
-            z-index: 1;
-        }
-        .controls {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
+            max-width: 400px;
             justify-content: center;
-            align-items: center;
+            flex-shrink: 0;
         }
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        
+        select, input, button { 
+            padding: 5px; 
+            border-radius: 6px; 
+            border: none; 
+            background: #2a2a40; 
+            color: white; 
+            font-size: 11px;
+            font-weight: 600;
         }
-        label {
-            font-weight: bold;
-            font-size: 14px;
+        input[type="number"] { width: 35px; text-align: center; }
+        button#startBtn { background: #4CAF50; cursor: pointer; }
+        button#resetBtn { background: #f44336; cursor: pointer; }
+
+        .scores { 
+            display: flex; 
+            justify-content: space-around;
+            width: 100%;
+            max-width: 350px;
+            font-weight: 800;
+            font-size: 15px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
         }
-        select, input, button {
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #45a049;
-        }
+
         #gameCanvas {
-            border: 4px solid white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            margin: 20px 0;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            background: #2d8659;
+            width: 100%;
+            max-width: 380px;
+            flex-grow: 1; 
+            max-height: 58vh; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: block;
         }
-        .scores {
+
+        .control-footer {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px 0 env(safe-area-inset-bottom);
+            flex-shrink: 0;
+        }
+
+        .btn-touch {
+            flex: 1;
+            height: 55px; 
+            max-width: 140px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px; 
             display: flex;
-            gap: 40px;
-            font-size: 18px;
-            margin-top: 20px;
-        }
-        .score-item {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            font-size: 24px;
         }
-        .score-value {
-            font-size: 32px;
-            font-weight: bold;
-        }
-        .high-scores {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            min-width: 300px;
-        }
-        .high-scores h3 {
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        .high-score-entry {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
+
+        .btn-touch:active { background: rgba(76, 175, 80, 0.4); transform: scale(0.96); }
+
+        #p2TouchZone { display: none; margin-bottom: 10px; }
+
         .game-over {
             position: fixed;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 15px;
+            background: rgba(0,0,0,0.95);
+            padding: 30px;
+            border-radius: 20px;
             text-align: center;
             display: none;
-            z-index: 1000;
-        }
-        .game-over h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-        .game-over button {
-            margin-top: 20px;
-            padding: 15px 30px;
-            font-size: 18px;
-        }
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            text-align: center;
-            font-size: 14px;
+            z-index: 100;
+            border: 2px solid #4CAF50;
         }
     </style>
 </head>
 <body>
-    <div class="instructions">
-        <strong>Controls:</strong> Player 1 (Left) - Arrow Up/Down | Player 2 (Right) - W/S keys
-    </div>
 
     <div class="controls">
-        <div class="control-group">
-            <label for="gameMode">Game Mode:</label>
-            <select id="gameMode">
-                <option value="single">vs Computer</option>
-                <option value="two-player">Two Players</option>
-            </select>
+        <select id="gameMode">
+            <option value="single">vs Robot</option>
+            <option value="two-player">2 Players</option>
+        </select>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <div style="display:flex; align-items:center; gap:3px;">
+            <span style="font-size:10px;">Pts:</span>
+            <input type="number" id="winPoints" value="11">
         </div>
-        <div class="control-group">
-            <label for="difficulty">Difficulty:</label>
-            <select id="difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="winPoints">Points to Win:</label>
-            <input type="number" id="winPoints" value="11" min="1" max="21">
-        </div>
-        <button id="startBtn">Start Game</button>
-        <button id="resetBtn" style="background: #f44336; display: none;">Reset Game</button>
+        <button id="startBtn">START</button>
+        <button id="resetBtn">RESET</button>
     </div>
 
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div class="control-footer" id="p2TouchZone">
+        <div class="btn-touch" id="p2Left">◀</div>
+        <div class="btn-touch" id="p2Right">▶</div>
+    </div>
 
     <div class="scores">
-        <div class="score-item">
-            <div>Player 1</div>
-            <div class="score-value" id="player1Score">0</div>
-        </div>
-        <div class="score-item">
-            <div id="player2Label">Computer</div>
-            <div class="score-value" id="player2Score">0</div>
-        </div>
+        <div id="labelTop" style="color: #ffadad;">Robot: <span id="scoreTop">0</span></div>
+        <div style="color: #9bf6ff;">YOU: <span id="scoreBottom">0</span></div>
     </div>
 
-    <div class="high-scores">
-        <h3>High Scores (vs Computer)</h3>
-        <div id="highScoresList"></div>
+    <canvas id="gameCanvas" width="450" height="750"></canvas>
+
+    <div class="control-footer">
+        <div class="btn-touch" id="p1Left">◀</div>
+        <div class="btn-touch" id="p1Right">▶</div>
     </div>
 
     <div class="game-over" id="gameOver">
-        <h2 id="winnerText">Player 1 Wins!</h2>
-        <button onclick="location.reload()">Play Again</button>
+        <h2 id="winnerText">WINNER!</h2>
+        <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:10px; font-weight:bold;">PLAY AGAIN</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        
-        // Audio context for sound effects
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playPaddleHit() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = 350;
-            gain.gain.value = 0.15;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.stop(audioCtx.currentTime + 0.1);
-        }
-        
-        function playWallHit() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = 180;
-            gain.gain.value = 0.08;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-            osc.stop(audioCtx.currentTime + 0.08);
-        }
-        
-        function playScore() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = 440;
-            gain.gain.value = 0.12;
-            osc.start();
-            osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.3);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.stop(audioCtx.currentTime + 0.3);
+
+        function playSfx(freq, dur, vol) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.value = freq; gain.gain.value = vol;
+                osc.start(); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+                osc.stop(audioCtx.currentTime + dur);
+            } catch(e) {}
         }
 
-        // Game state
-        let gameRunning = false;
-        let gameMode = 'single';
-        let difficulty = 'medium';
-        let winPoints = 11;
-        
-        // Paddles
-        const paddleWidth = 15;
-        const paddleHeight = 80;
-        let paddle1Y = canvas.height / 2 - paddleHeight / 2;
-        let paddle2Y = canvas.height / 2 - paddleHeight / 2;
-        const paddleSpeed = 7;
-        
-        // Ball
-        let ballX = canvas.width / 2;
-        let ballY = canvas.height / 2;
-        const ballRadius = 8;
-        let ballSpeedX = 7;
-        let ballSpeedY = 3;
-        let rallyCount = 0; // Track hits for speed increase
-        
-        // Scores
-        let score1 = 0;
-        let score2 = 0;
-        
-        // Controls
-        const keys = {};
-        
-        // High scores
-        let highScores = JSON.parse(localStorage.getItem('tableTennisScores') || '[]');
-        
-        document.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
-        });
-        
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('resetBtn').addEventListener('click', resetGame);
-        
-        document.getElementById('gameMode').addEventListener('change', (e) => {
-            gameMode = e.target.value;
-            document.getElementById('player2Label').textContent = 
-                gameMode === 'single' ? 'Computer' : 'Player 2';
-            document.querySelector('.high-scores h3').textContent = 
-                gameMode === 'single' ? 'High Scores (vs Computer)' : 'Recent Games (2 Player)';
-        });
-        
-        document.getElementById('difficulty').addEventListener('change', (e) => {
-            difficulty = e.target.value;
-        });
-        
-        document.getElementById('winPoints').addEventListener('change', (e) => {
-            winPoints = parseInt(e.target.value) || 11;
-        });
-        
-        function startGame() {
-            gameRunning = true;
-            score1 = 0;
-            score2 = 0;
-            rallyCount = 0;
-            updateScores();
-            resetBall();
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('resetBtn').style.display = 'inline-block';
-            gameLoop();
+        let gameRunning = false, pBX = 175, pTX = 175, sB = 0, sT = 0;
+        let bX = 225, bY = 375, bSX = 6, bSY = 6; 
+        const pThick = 18, pLen = 100, bRad = 10, pSpd = 12; 
+        const keys = {}, touch = { p1L: false, p1R: false, p2L: false, p2R: false };
+
+        window.addEventListener('keydown', e => keys[e.key] = true);
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        function bindT(id, prop) {
+            const el = document.getElementById(id);
+            const set = (val) => (e) => { e.preventDefault(); touch[prop] = val; };
+            el.addEventListener('touchstart', set(true)); el.addEventListener('touchend', set(false));
+            el.addEventListener('mousedown', () => touch[prop] = true); el.addEventListener('mouseup', () => touch[prop] = false);
         }
-        
-        function resetGame() {
-            gameRunning = false;
-            score1 = 0;
-            score2 = 0;
-            rallyCount = 0;
-            paddle1Y = canvas.height / 2 - paddleHeight / 2;
-            paddle2Y = canvas.height / 2 - paddleHeight / 2;
-            updateScores();
-            resetBall();
-            draw();
-            document.getElementById('startBtn').style.display = 'inline-block';
-            document.getElementById('resetBtn').style.display = 'none';
-        }
-        
+        bindT('p1Left', 'p1L'); bindT('p1Right', 'p1R');
+        bindT('p2Left', 'p2L'); bindT('p2Right', 'p2R');
+
+        document.getElementById('gameMode').onchange = (e) => {
+            const is2P = e.target.value === 'two-player';
+            document.getElementById('p2TouchZone').style.display = is2P ? 'flex' : 'none';
+            document.getElementById('labelTop').innerHTML = (is2P ? 'P2: ' : 'Robot: ') + `<span id="scoreTop">${sT}</span>`;
+        };
+
         function resetBall() {
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
-            rallyCount = 0;
-            
-            // Random serve direction and angle
-            const baseSpeed = 7; // Increased from 5 to 7 for faster initial speed
-            const angle = (Math.random() - 0.5) * Math.PI / 4; // Less extreme angles
-            const direction = Math.random() < 0.5 ? 1 : -1;
-            ballSpeedX = direction * baseSpeed * Math.cos(angle);
-            ballSpeedY = baseSpeed * Math.sin(angle);
+            bX = 225; bY = 375;
+            bSY = Math.random() < 0.5 ? 6 : -6;
+            bSX = (Math.random() - 0.5) * 8;
         }
-        
-        function updateScores() {
-            document.getElementById('player1Score').textContent = score1;
-            document.getElementById('player2Score').textContent = score2;
-        }
-        
-        function updateHighScores() {
-            if (gameMode === 'single') {
-                highScores.push({ 
-                    player1: score1, 
-                    player2: score2, 
-                    difficulty: difficulty,
-                    date: new Date().toLocaleDateString()
-                });
-                highScores.sort((a, b) => b.player1 - a.player1);
-                highScores = highScores.slice(0, 5);
-                localStorage.setItem('tableTennisScores', JSON.stringify(highScores));
-            }
-            displayHighScores();
-        }
-        
-        function displayHighScores() {
-            const list = document.getElementById('highScoresList');
-            if (highScores.length === 0) {
-                list.innerHTML = '<div style="text-align: center; opacity: 0.6;">No scores yet</div>';
-                return;
-            }
-            list.innerHTML = highScores.map((score, i) => `
-                <div class="high-score-entry">
-                    <span>${i + 1}. ${score.difficulty} - ${score.date}</span>
-                    <span>${score.player1} - ${score.player2}</span>
-                </div>
-            `).join('');
-        }
-        
-        displayHighScores();
-        draw();
-        
-        function gameLoop() {
-            if (!gameRunning) return;
-            
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-        
+
         function update() {
-            // Player 1 controls (Arrow keys)
-            if (keys['ArrowUp'] && paddle1Y > 0) {
-                paddle1Y -= paddleSpeed;
-            }
-            if (keys['ArrowDown'] && paddle1Y < canvas.height - paddleHeight) {
-                paddle1Y += paddleSpeed;
-            }
-            
-            // Player 2 controls
-            if (gameMode === 'two-player') {
-                // WASD for player 2
-                if (keys['w'] && paddle2Y > 0) {
-                    paddle2Y -= paddleSpeed;
-                }
-                if (keys['s'] && paddle2Y < canvas.height - paddleHeight) {
-                    paddle2Y += paddleSpeed;
-                }
+            if (!gameRunning) return;
+            if ((keys['ArrowLeft'] || touch.p1L) && pBX > 0) pBX -= pSpd;
+            if ((keys['ArrowRight'] || touch.p1R) && pBX < canvas.width - pLen) pBX += pSpd;
+
+            if (document.getElementById('gameMode').value === 'two-player') {
+                if ((keys['a'] || touch.p2L) && pTX > 0) pTX -= pSpd;
+                if ((keys['d'] || touch.p2R) && pTX < canvas.width - pLen) pTX += pSpd;
             } else {
-                // AI opponent with varying difficulty
-                let aiSpeed, reactionThreshold, shouldReact;
-                
-                if (difficulty === 'easy') {
-                    aiSpeed = 3;
-                    reactionThreshold = 30; // Large dead zone
-                    // Easy AI only reacts 70% of the time
-                    shouldReact = ballSpeedX > 0 && Math.random() < 0.7;
-                } else if (difficulty === 'medium') {
-                    aiSpeed = 5.5;
-                    reactionThreshold = 15; // Medium dead zone
-                    // Medium AI reacts 90% of the time
-                    shouldReact = ballSpeedX > 0 && Math.random() < 0.9;
-                } else { // hard
-                    aiSpeed = 8;
-                    reactionThreshold = 5; // Very precise
-                    // Hard AI always reacts
-                    shouldReact = ballSpeedX > 0;
-                }
-                
-                const paddleCenter = paddle2Y + paddleHeight / 2;
-                const targetY = ballY;
-                
-                if (shouldReact) {
-                    if (paddleCenter < targetY - reactionThreshold) {
-                        paddle2Y = Math.min(paddle2Y + aiSpeed, canvas.height - paddleHeight);
-                    } else if (paddleCenter > targetY + reactionThreshold) {
-                        paddle2Y = Math.max(paddle2Y - aiSpeed, 0);
-                    }
+                let aiSpd = (document.getElementById('difficulty').value === 'easy' ? 4.5 : 8);
+                if (bSY < 0) {
+                    if (pTX + pLen/2 < bX - 10) pTX += aiSpd;
+                    else if (pTX + pLen/2 > bX + 10) pTX -= aiSpd;
                 }
             }
-            
-            // Ball movement
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
-            
-            // Ball collision with top/bottom walls
-            if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
-                ballSpeedY = -ballSpeedY;
-                playWallHit();
+
+            bX += bSX; bY += bSY;
+            if (bX - bRad < 0 || bX + bRad > canvas.width) { bSX *= -1; playSfx(150, 0.05, 0.05); }
+            if (bY + bRad > canvas.height - 30 && bX > pBX && bX < pBX + pLen && bSY > 0) {
+                bSY = -Math.abs(bSY) * 1.05; bSX += (bX - (pBX + pLen/2)) / 8; playSfx(300, 0.1, 0.1);
             }
-            
-            // Ball collision with left paddle (Player 1)
-            if (ballX - ballRadius < paddleWidth + 20 && 
-                ballY > paddle1Y && ballY < paddle1Y + paddleHeight &&
-                ballSpeedX < 0) {
-                
-                // Calculate hit position for spin effect
-                const hitPos = (ballY - (paddle1Y + paddleHeight / 2)) / (paddleHeight / 2);
-                ballSpeedX = Math.abs(ballSpeedX);
-                ballSpeedY += hitPos * 3;
-                
-                // Gradually increase speed during rally (realistic)
-                rallyCount++;
-                // Speed up every hit with solid increase
-                const maxSpeed = 14; // Increased cap from 12 to 14
-                if (Math.abs(ballSpeedX) < maxSpeed) {
-                    ballSpeedX *= 1.07; // Increased from 1.06 to 1.07
-                    ballSpeedY *= 1.07;
-                }
-                
-                playPaddleHit();
+            if (bY - bRad < 30 && bX > pTX && bX < pTX + pLen && bSY < 0) {
+                bSY = Math.abs(bSY) * 1.05; bSX += (bX - (pTX + pLen/2)) / 8; playSfx(300, 0.1, 0.1);
             }
-            
-            // Ball collision with right paddle (Player 2/AI)
-            if (ballX + ballRadius > canvas.width - paddleWidth - 20 && 
-                ballY > paddle2Y && ballY < paddle2Y + paddleHeight &&
-                ballSpeedX > 0) {
-                
-                const hitPos = (ballY - (paddle2Y + paddleHeight / 2)) / (paddleHeight / 2);
-                ballSpeedX = -Math.abs(ballSpeedX);
-                ballSpeedY += hitPos * 3;
-                
-                rallyCount++;
-                // Speed up every hit with solid increase
-                const maxSpeed = 14; // Increased cap from 12 to 14
-                if (Math.abs(ballSpeedX) < maxSpeed) {
-                    ballSpeedX *= 1.07; // Increased from 1.06 to 1.07
-                    ballSpeedY *= 1.07;
-                }
-                
-                playPaddleHit();
-            }
-            
-            // Scoring - Player 2 scores
-            if (ballX < 0) {
-                score2++;
-                updateScores();
-                playScore();
-                checkWin();
-                resetBall();
-            }
-            
-            // Scoring - Player 1 scores
-            if (ballX > canvas.width) {
-                score1++;
-                updateScores();
-                playScore();
-                checkWin();
-                resetBall();
-            }
-        }
-        
-        function checkWin() {
-            if (score1 >= winPoints || score2 >= winPoints) {
+            if (bY < 0) { sB++; resetBall(); playSfx(440, 0.2, 0.1); }
+            if (bY > canvas.height) { sT++; resetBall(); playSfx(440, 0.2, 0.1); }
+
+            document.getElementById('scoreBottom').textContent = sB;
+            document.getElementById('scoreTop').textContent = sT;
+
+            const win = parseInt(document.getElementById('winPoints').value) || 11;
+            if (sB >= win || sT >= win) {
                 gameRunning = false;
-                const winner = score1 >= winPoints ? 'Player 1' : 
-                    (gameMode === 'single' ? 'Computer' : 'Player 2');
-                document.getElementById('winnerText').textContent = winner + ' Wins!';
                 document.getElementById('gameOver').style.display = 'block';
-                document.getElementById('resetBtn').style.display = 'none';
-                document.getElementById('startBtn').style.display = 'inline-block';
-                updateHighScores();
+                document.getElementById('winnerText').textContent = sB >= win ? "YOU WIN!" : "ROBOT WINS!";
             }
         }
-        
+
         function draw() {
-            // Green table
-            ctx.fillStyle = '#2d8659';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#2d8659'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, 375); ctx.lineTo(450, 375); ctx.stroke();
             
-            // Center line
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([10, 10]);
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 0);
-            ctx.lineTo(canvas.width / 2, canvas.height);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // Table edge lines
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
-            
-            // Signature in bottom-right corner
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '12px Arial';
+            // Refined Designer Signature: Darker Green, Elegant Serif, Not Italic
+            ctx.save();
+            ctx.fillStyle = '#1e5c3d'; // Darker forest green
+            ctx.font = '600 20px "Bodoni Moda", serif'; 
             ctx.textAlign = 'right';
-            ctx.fillText('M.A.', canvas.width - 10, canvas.height - 10);
+            ctx.fillText('M.A.', canvas.width - 20, canvas.height - 20);
+            ctx.restore();
             
-            // Paddles (beige)
-            ctx.fillStyle = '#d2b48c';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            ctx.fillRect(20, paddle1Y, paddleWidth, paddleHeight);
-            ctx.fillRect(canvas.width - 20 - paddleWidth, paddle2Y, paddleWidth, paddleHeight);
-            ctx.shadowBlur = 0;
-            
-            // Ball (white) with shadow
-            ctx.fillStyle = 'white';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#d2b48c'; 
+            ctx.fillRect(pBX, canvas.height - 30, pLen, pThick); 
+            ctx.fillRect(pTX, 15, pLen, pThick);
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bX, bY, bRad, 0, Math.PI*2); ctx.fill();
         }
+
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        document.getElementById('startBtn').onclick = () => { 
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            gameRunning = true; sB = 0; sT = 0; resetBall(); 
+        };
+        document.getElementById('resetBtn').onclick = () => location.reload();
+        loop();
     </script>
 </body>
 </html>
