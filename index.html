@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro Vertical Tennis</title>
+    
+    <title>M.A. Table Tennis 🏓</title>
+    <meta name="description" content="A professional table tennis experience by M.A.">
+
     <style>
-        /* Classic Serif Font for Signature */
+        /* Luxury Serif Font for Signature */
         @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@600&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
@@ -22,76 +25,50 @@
             padding: 10px 15px;
         }
 
+        /* Top Menu Bar */
         .controls { 
             background: rgba(255, 255, 255, 0.08); 
-            padding: 6px 10px; 
-            border-radius: 12px; 
-            display: flex; 
-            gap: 6px; 
-            margin-bottom: 8px;
-            width: 100%;
-            max-width: 400px;
-            justify-content: center;
-            flex-shrink: 0;
+            padding: 6px 10px; border-radius: 12px; 
+            display: flex; gap: 6px; margin-bottom: 8px;
+            width: 100%; max-width: 400px; justify-content: center; flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         select, input, button { 
-            padding: 5px; 
-            border-radius: 6px; 
-            border: none; 
-            background: #2a2a40; 
-            color: white; 
-            font-size: 11px;
-            font-weight: 600;
+            padding: 5px; border-radius: 6px; border: none; 
+            background: #2a2a40; color: white; font-size: 11px; font-weight: 600;
         }
         input[type="number"] { width: 35px; text-align: center; }
         button#startBtn { background: #4CAF50; cursor: pointer; }
         button#resetBtn { background: #f44336; cursor: pointer; }
 
         .scores { 
-            display: flex; 
-            justify-content: space-around;
-            width: 100%;
-            max-width: 350px;
-            font-weight: 800;
-            font-size: 15px;
-            margin-bottom: 8px;
-            flex-shrink: 0;
+            display: flex; justify-content: space-around;
+            width: 100%; max-width: 350px; font-weight: 800;
+            font-size: 15px; margin-bottom: 8px; flex-shrink: 0;
         }
 
+        /* The Professional Court */
         #gameCanvas {
-            border: 2px solid #fff;
-            border-radius: 8px;
-            background: #2d8659;
-            width: 100%;
-            max-width: 380px;
-            flex-grow: 1; 
-            max-height: 58vh; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            display: block;
+            border: 2px solid #fff; border-radius: 8px;
+            background: #2d8659; width: 100%; max-width: 380px;
+            flex-grow: 1; max-height: 58vh; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: block;
         }
 
+        /* Control Area */
         .control-footer {
-            width: 100%;
-            max-width: 380px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            padding: 15px 0 env(safe-area-inset-bottom);
-            flex-shrink: 0;
+            width: 100%; max-width: 380px; display: flex;
+            justify-content: center; gap: 15px;
+            padding: 15px 0 env(safe-area-inset-bottom); flex-shrink: 0;
         }
 
         .btn-touch {
-            flex: 1;
-            height: 55px; 
-            max-width: 140px;
+            flex: 1; height: 55px; max-width: 140px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
+            border-radius: 30px; display: flex;
+            align-items: center; justify-content: center; font-size: 24px;
         }
 
         .btn-touch:active { background: rgba(76, 175, 80, 0.4); transform: scale(0.96); }
@@ -99,16 +76,11 @@
         #p2TouchZone { display: none; margin-bottom: 10px; }
 
         .game-over {
-            position: fixed;
-            top: 50%; left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            display: none;
-            z-index: 100;
-            border: 2px solid #4CAF50;
+            background: rgba(0,0,0,0.95); padding: 30px;
+            border-radius: 20px; text-align: center;
+            display: none; z-index: 100; border: 2px solid #4CAF50;
         }
     </style>
 </head>
@@ -203,7 +175,6 @@
             if (!gameRunning) return;
             if ((keys['ArrowLeft'] || touch.p1L) && pBX > 0) pBX -= pSpd;
             if ((keys['ArrowRight'] || touch.p1R) && pBX < canvas.width - pLen) pBX += pSpd;
-
             if (document.getElementById('gameMode').value === 'two-player') {
                 if ((keys['a'] || touch.p2L) && pTX > 0) pTX -= pSpd;
                 if ((keys['d'] || touch.p2R) && pTX < canvas.width - pLen) pTX += pSpd;
@@ -214,7 +185,6 @@
                     else if (pTX + pLen/2 > bX + 10) pTX -= aiSpd;
                 }
             }
-
             bX += bSX; bY += bSY;
             if (bX - bRad < 0 || bX + bRad > canvas.width) { bSX *= -1; playSfx(150, 0.05, 0.05); }
             if (bY + bRad > canvas.height - 30 && bX > pBX && bX < pBX + pLen && bSY > 0) {
@@ -225,7 +195,6 @@
             }
             if (bY < 0) { sB++; resetBall(); playSfx(440, 0.2, 0.1); }
             if (bY > canvas.height) { sT++; resetBall(); playSfx(440, 0.2, 0.1); }
-
             document.getElementById('scoreBottom').textContent = sB;
             document.getElementById('scoreTop').textContent = sT;
 
@@ -238,18 +207,22 @@
         }
 
         function draw() {
+            // Background
             ctx.fillStyle = '#2d8659'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Court Lines
             ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(0, 375); ctx.lineTo(450, 375); ctx.stroke();
             
-            // Refined Designer Signature: Darker Green, Elegant Serif, Not Italic
+            // The M.A. Signature
             ctx.save();
-            ctx.fillStyle = '#1e5c3d'; // Darker forest green
-            ctx.font = '600 20px "Bodoni Moda", serif'; 
+            ctx.fillStyle = '#1b5236'; // Darker forest green for elegance
+            ctx.font = '600 18px "Bodoni Moda", serif'; 
             ctx.textAlign = 'right';
             ctx.fillText('M.A.', canvas.width - 20, canvas.height - 20);
             ctx.restore();
             
+            // Paddles and Ball
             ctx.fillStyle = '#d2b48c'; 
             ctx.fillRect(pBX, canvas.height - 30, pLen, pThick); 
             ctx.fillRect(pTX, 15, pLen, pThick);
