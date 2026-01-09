@@ -272,7 +272,7 @@
         let ballX = canvas.width / 2;
         let ballY = canvas.height / 2;
         const ballRadius = 8;
-        let ballSpeedX = 5;
+        let ballSpeedX = 7;
         let ballSpeedY = 3;
         let rallyCount = 0; // Track hits for speed increase
         
@@ -345,7 +345,7 @@
             rallyCount = 0;
             
             // Random serve direction and angle
-            const baseSpeed = 5;
+            const baseSpeed = 7; // Increased from 5 to 7 for faster initial speed
             const angle = (Math.random() - 0.5) * Math.PI / 4; // Less extreme angles
             const direction = Math.random() < 0.5 ? 1 : -1;
             ballSpeedX = direction * baseSpeed * Math.cos(angle);
@@ -370,9 +370,6 @@
                 localStorage.setItem('tableTennisScores', JSON.stringify(highScores));
             }
             displayHighScores();
-        
-        // Draw initial canvas state
-        draw();
         }
         
         function displayHighScores() {
@@ -390,6 +387,7 @@
         }
         
         displayHighScores();
+        draw();
         
         function gameLoop() {
             if (!gameRunning) return;
@@ -472,9 +470,11 @@
                 
                 // Gradually increase speed during rally (realistic)
                 rallyCount++;
-                if (rallyCount % 3 === 0) {
-                    ballSpeedX *= 1.05;
-                    ballSpeedY *= 1.05;
+                // Speed up every hit with solid increase
+                const maxSpeed = 14; // Increased cap from 12 to 14
+                if (Math.abs(ballSpeedX) < maxSpeed) {
+                    ballSpeedX *= 1.07; // Increased from 1.06 to 1.07
+                    ballSpeedY *= 1.07;
                 }
                 
                 playPaddleHit();
@@ -490,9 +490,11 @@
                 ballSpeedY += hitPos * 3;
                 
                 rallyCount++;
-                if (rallyCount % 3 === 0) {
-                    ballSpeedX *= 1.05;
-                    ballSpeedY *= 1.05;
+                // Speed up every hit with solid increase
+                const maxSpeed = 14; // Increased cap from 12 to 14
+                if (Math.abs(ballSpeedX) < maxSpeed) {
+                    ballSpeedX *= 1.07; // Increased from 1.06 to 1.07
+                    ballSpeedY *= 1.07;
                 }
                 
                 playPaddleHit();
