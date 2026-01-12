@@ -22,15 +22,15 @@
             height: 100vh;
             color: white;
             overflow: hidden;
-            padding: 10px 15px;
+            padding: 5px 10px;
         }
 
         /* Top Menu Bar */
         .controls { 
             background: rgba(255, 255, 255, 0.08); 
-            padding: 6px 10px; border-radius: 12px; 
-            display: flex; gap: 6px; margin-bottom: 8px;
-            width: 100%; max-width: 400px; justify-content: center; flex-shrink: 0;
+            padding: 4px 8px; border-radius: 10px; 
+            display: flex; gap: 5px; margin-bottom: 5px;
+            width: 100%; max-width: 420px; justify-content: center; flex-shrink: 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
@@ -41,39 +41,24 @@
         input[type="number"] { width: 35px; text-align: center; }
         button#startBtn { background: #4CAF50; cursor: pointer; }
         button#resetBtn { background: #f44336; cursor: pointer; }
+        button#fullscreenBtn { background: #2196F3; cursor: pointer; }
 
         .scores { 
             display: flex; justify-content: space-around;
-            width: 100%; max-width: 350px; font-weight: 800;
-            font-size: 15px; margin-bottom: 8px; flex-shrink: 0;
+            width: 100%; max-width: 420px; font-weight: 800;
+            font-size: 15px; margin-bottom: 5px; flex-shrink: 0;
         }
 
         /* The Professional Court */
         #gameCanvas {
             border: 2px solid #fff; border-radius: 8px;
-            background: #2d8659; width: 100%; max-width: 380px;
-            flex-grow: 1; max-height: 58vh; 
+            background: #2d8659; width: 100%; max-width: 420px;
+            height: calc(100vh - 100px);
+            max-height: 70vh;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: block;
         }
 
-        /* Control Area */
-        .control-footer {
-            width: 100%; max-width: 380px; display: flex;
-            justify-content: center; gap: 15px;
-            padding: 15px 0 env(safe-area-inset-bottom); flex-shrink: 0;
-        }
 
-        .btn-touch {
-            flex: 1; height: 55px; max-width: 140px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px; display: flex;
-            align-items: center; justify-content: center; font-size: 24px;
-        }
-
-        .btn-touch:active { background: rgba(76, 175, 80, 0.4); transform: scale(0.96); }
-
-        #p2TouchZone { display: none; margin-bottom: 10px; }
 
         .game-over {
             position: fixed; top: 50%; left: 50%;
@@ -100,13 +85,9 @@
             <span style="font-size:10px;">Pts:</span>
             <input type="number" id="winPoints" value="11">
         </div>
+        <button id="fullscreenBtn">⛶</button>
         <button id="startBtn">START</button>
         <button id="resetBtn">RESET</button>
-    </div>
-
-    <div class="control-footer" id="p2TouchZone">
-        <div class="btn-touch" id="p2Left">◀</div>
-        <div class="btn-touch" id="p2Right">▶</div>
     </div>
 
     <div class="scores">
@@ -114,12 +95,7 @@
         <div style="color: #9bf6ff;">YOU: <span id="scoreBottom">0</span></div>
     </div>
 
-    <canvas id="gameCanvas" width="450" height="750"></canvas>
-
-    <div class="control-footer">
-        <div class="btn-touch" id="p1Left">◀</div>
-        <div class="btn-touch" id="p1Right">▶</div>
-    </div>
+    <canvas id="gameCanvas" width="400" height="650"></canvas>
 
     <div class="game-over" id="gameOver">
         <h2 id="winnerText">WINNER!</h2>
@@ -142,42 +118,112 @@
             } catch(e) {}
         }
 
-        let gameRunning = false, pBX = 175, pTX = 175, sB = 0, sT = 0;
-        let bX = 225, bY = 375, bSX = 6, bSY = 6; 
+        let gameRunning = false, pBX = 150, pTX = 150, sB = 0, sT = 0;
+        let bX = 200, bY = 325, bSX = 6, bSY = 6; 
         const pThick = 18, pLen = 100, bRad = 10, pSpd = 12; 
-        const keys = {}, touch = { p1L: false, p1R: false, p2L: false, p2R: false };
+        const keys = {};
+        let dragPaddle = null;
 
         window.addEventListener('keydown', e => keys[e.key] = true);
         window.addEventListener('keyup', e => keys[e.key] = false);
 
-        function bindT(id, prop) {
-            const el = document.getElementById(id);
-            const set = (val) => (e) => { e.preventDefault(); touch[prop] = val; };
-            el.addEventListener('touchstart', set(true)); el.addEventListener('touchend', set(false));
-            el.addEventListener('mousedown', () => touch[prop] = true); el.addEventListener('mouseup', () => touch[prop] = false);
+        // Touch drag on canvas for paddle control
+        function getTouchPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const touch = e.touches ? e.touches[0] : e;
+            return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * (canvas.height / rect.height) };
         }
-        bindT('p1Left', 'p1L'); bindT('p1Right', 'p1R');
-        bindT('p2Left', 'p2L'); bindT('p2Right', 'p2R');
+
+        function isTouchingPaddleArea(y) {
+            return { p1: y > canvas.height - 150, p2: y < 150 };
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const pos = getTouchPos(e);
+            const area = isTouchingPaddleArea(pos.y);
+            if (area.p1) dragPaddle = 'p1';
+            else if (document.getElementById('gameMode').value === 'two-player' && area.p2) dragPaddle = 'p2';
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!dragPaddle) return;
+            const pos = getTouchPos(e);
+            if (dragPaddle === 'p1') {
+                pBX = Math.max(0, Math.min(canvas.width - pLen, pos.x - pLen / 2));
+            } else if (dragPaddle === 'p2') {
+                pTX = Math.max(0, Math.min(canvas.width - pLen, pos.x - pLen / 2));
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            dragPaddle = null;
+        });
+
+        // Mouse drag support for touchscreen laptops
+        let mouseDown = false;
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getTouchPos(e);
+            const area = isTouchingPaddleArea(pos.y);
+            if (area.p1) { dragPaddle = 'p1'; mouseDown = true; }
+            else if (document.getElementById('gameMode').value === 'two-player' && area.p2) { dragPaddle = 'p2'; mouseDown = true; }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!mouseDown || !dragPaddle) return;
+            const pos = getTouchPos(e);
+            if (dragPaddle === 'p1') {
+                pBX = Math.max(0, Math.min(canvas.width - pLen, pos.x - pLen / 2));
+            } else if (dragPaddle === 'p2') {
+                pTX = Math.max(0, Math.min(canvas.width - pLen, pos.x - pLen / 2));
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+            dragPaddle = null;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouseDown = false;
+            dragPaddle = null;
+        });
 
         document.getElementById('gameMode').onchange = (e) => {
             const is2P = e.target.value === 'two-player';
-            document.getElementById('p2TouchZone').style.display = is2P ? 'flex' : 'none';
             document.getElementById('labelTop').innerHTML = (is2P ? 'P2: ' : 'Robot: ') + `<span id="scoreTop">${sT}</span>`;
         };
 
+        // Fullscreen functionality
+        document.getElementById('fullscreenBtn').onclick = () => {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            }
+        };
+
         function resetBall() {
-            bX = 225; bY = 375;
+            bX = 200; bY = 325;
             bSY = Math.random() < 0.5 ? 6 : -6;
             bSX = (Math.random() - 0.5) * 8;
         }
 
         function update() {
             if (!gameRunning) return;
-            if ((keys['ArrowLeft'] || touch.p1L) && pBX > 0) pBX -= pSpd;
-            if ((keys['ArrowRight'] || touch.p1R) && pBX < canvas.width - pLen) pBX += pSpd;
+            if (keys['ArrowLeft'] && pBX > 0) pBX -= pSpd;
+            if (keys['ArrowRight'] && pBX < canvas.width - pLen) pBX += pSpd;
             if (document.getElementById('gameMode').value === 'two-player') {
-                if ((keys['a'] || touch.p2L) && pTX > 0) pTX -= pSpd;
-                if ((keys['d'] || touch.p2R) && pTX < canvas.width - pLen) pTX += pSpd;
+                if (keys['a'] && pTX > 0) pTX -= pSpd;
+                if (keys['d'] && pTX < canvas.width - pLen) pTX += pSpd;
             } else {
                 let aiSpd = (document.getElementById('difficulty').value === 'easy' ? 4.5 : 8);
                 if (bSY < 0) {
@@ -188,10 +234,16 @@
             bX += bSX; bY += bSY;
             if (bX - bRad < 0 || bX + bRad > canvas.width) { bSX *= -1; playSfx(150, 0.05, 0.05); }
             if (bY + bRad > canvas.height - 30 && bX > pBX && bX < pBX + pLen && bSY > 0) {
-                bSY = -Math.abs(bSY) * 1.05; bSX += (bX - (pBX + pLen/2)) / 8; playSfx(300, 0.1, 0.1);
+                bSY = -Math.abs(bSY) * 1.05; 
+                bSX += (bX - (pBX + pLen/2)) / 8;
+                if (Math.abs(bSX) < 2) bSX = bSX < 0 ? -2 : 2;
+                playSfx(300, 0.1, 0.1);
             }
             if (bY - bRad < 30 && bX > pTX && bX < pTX + pLen && bSY < 0) {
-                bSY = Math.abs(bSY) * 1.05; bSX += (bX - (pTX + pLen/2)) / 8; playSfx(300, 0.1, 0.1);
+                bSY = Math.abs(bSY) * 1.05; 
+                bSX += (bX - (pTX + pLen/2)) / 8;
+                if (Math.abs(bSX) < 2) bSX = bSX < 0 ? -2 : 2;
+                playSfx(300, 0.1, 0.1);
             }
             if (bY < 0) { sB++; resetBall(); playSfx(440, 0.2, 0.1); }
             if (bY > canvas.height) { sT++; resetBall(); playSfx(440, 0.2, 0.1); }
@@ -212,7 +264,7 @@
             
             // Court Lines
             ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(0, 375); ctx.lineTo(450, 375); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 325); ctx.lineTo(400, 325); ctx.stroke();
             
             // The M.A. Signature
             ctx.save();
