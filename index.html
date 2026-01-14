@@ -19,43 +19,64 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
+            justify-content: flex-start;
+            min-height: 100vh;
             color: white;
             overflow: hidden;
-            padding: 5px 10px;
+            padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
         }
 
         /* Top Menu Bar */
         .controls { 
             background: rgba(255, 255, 255, 0.08); 
-            padding: 4px 8px; border-radius: 10px; 
-            display: flex; gap: 5px; margin-bottom: 5px;
-            width: 100%; max-width: 420px; justify-content: center; flex-shrink: 0;
+            padding: 6px; border-radius: 8px; 
+            display: flex; gap: 5px; margin-bottom: 6px;
+            width: 100%; max-width: 380px; justify-content: center; flex-shrink: 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         select, input, button { 
-            padding: 5px; border-radius: 6px; border: none; 
+            padding: 6px 8px; border-radius: 6px; border: none; 
             background: #2a2a40; color: white; font-size: 11px; font-weight: 600;
+            min-height: 36px; display: flex; align-items: center; justify-content: center;
         }
-        input[type="number"] { width: 35px; text-align: center; }
+        select { min-width: 65px; }
+        input[type="number"] { width: 40px; text-align: center; }
+        button { min-width: 36px; }
         button#startBtn { background: #4CAF50; cursor: pointer; }
         button#resetBtn { background: #f44336; cursor: pointer; }
-        button#fullscreenBtn { background: #2196F3; cursor: pointer; }
+        button#fullscreenBtn { background: #2196F3; cursor: pointer; font-size: 16px; }
+        button:active { transform: scale(0.95); opacity: 0.8; }
 
         .scores { 
             display: flex; justify-content: space-around;
-            width: 100%; max-width: 420px; font-weight: 800;
-            font-size: 15px; margin-bottom: 5px; flex-shrink: 0;
+            width: 100%; max-width: 380px; font-weight: 700;
+            font-size: 14px; margin-bottom: 6px; flex-shrink: 0;
         }
 
         /* The Professional Court */
         #gameCanvas {
             border: 2px solid #fff; border-radius: 8px;
-            background: #2d8659; width: 100%; max-width: 420px;
-            height: calc(100vh - 100px);
-            max-height: 70vh;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: block;
+            background: #2d8659; 
+            width: 100%; max-width: 380px;
+            aspect-ratio: 400 / 570;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            display: block;
+            touch-action: none;
+        }
+        
+        .touch-indicator {
+            position: absolute;
+            width: 60px; height: 60px;
+            border: 3px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse 0.3s ease-out;
+            z-index: 50;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
 
 
@@ -81,8 +102,8 @@
             <option value="medium" selected>Medium</option>
             <option value="hard">Hard</option>
         </select>
-        <div style="display:flex; align-items:center; gap:3px;">
-            <span style="font-size:10px;">Pts:</span>
+        <div style="display:flex; align-items:center; gap:2px;">
+            <span style="font-size:9px; opacity:0.8;">Pts:</span>
             <input type="number" id="winPoints" value="11">
         </div>
         <button id="fullscreenBtn">⛶</button>
@@ -95,7 +116,7 @@
         <div style="color: #9bf6ff;">YOU: <span id="scoreBottom">0</span></div>
     </div>
 
-    <canvas id="gameCanvas" width="400" height="650"></canvas>
+    <canvas id="gameCanvas" width="400" height="570"></canvas>
 
     <div class="game-over" id="gameOver">
         <h2 id="winnerText">WINNER!</h2>
@@ -139,12 +160,28 @@
             return { p1: y > canvas.height - 150, p2: y < 150 };
         }
 
+        function showTouchIndicator(x, y) {
+            const rect = canvas.getBoundingClientRect();
+            const indicator = document.createElement('div');
+            indicator.className = 'touch-indicator';
+            indicator.style.left = rect.left + (x / canvas.width) * rect.width + 'px';
+            indicator.style.top = rect.top + (y / canvas.height) * rect.height + 'px';
+            document.body.appendChild(indicator);
+            setTimeout(() => indicator.remove(), 300);
+        }
+
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const pos = getTouchPos(e);
             const area = isTouchingPaddleArea(pos.y);
-            if (area.p1) dragPaddle = 'p1';
-            else if (document.getElementById('gameMode').value === 'two-player' && area.p2) dragPaddle = 'p2';
+            if (area.p1) { 
+                dragPaddle = 'p1';
+                showTouchIndicator(pos.x, pos.y);
+            }
+            else if (document.getElementById('gameMode').value === 'two-player' && area.p2) { 
+                dragPaddle = 'p2';
+                showTouchIndicator(pos.x, pos.y);
+            }
         });
 
         canvas.addEventListener('touchmove', (e) => {
@@ -212,7 +249,7 @@
         };
 
         function resetBall() {
-            bX = 200; bY = 325;
+            bX = 200; bY = 285;
             bSY = Math.random() < 0.5 ? 6 : -6;
             bSX = (Math.random() - 0.5) * 8;
         }
@@ -225,24 +262,34 @@
                 if (keys['a'] && pTX > 0) pTX -= pSpd;
                 if (keys['d'] && pTX < canvas.width - pLen) pTX += pSpd;
             } else {
-                let aiSpd = (document.getElementById('difficulty').value === 'easy' ? 4.5 : 8);
+                const diff = document.getElementById('difficulty').value;
+                let aiSpd = diff === 'easy' ? 5 : diff === 'hard' ? 10 : 6.5;
+                let aiReaction = diff === 'easy' ? 18 : diff === 'hard' ? 5 : 12;
                 if (bSY < 0) {
-                    if (pTX + pLen/2 < bX - 10) pTX += aiSpd;
-                    else if (pTX + pLen/2 > bX + 10) pTX -= aiSpd;
+                    if (pTX + pLen/2 < bX - aiReaction) pTX += aiSpd;
+                    else if (pTX + pLen/2 > bX + aiReaction) pTX -= aiSpd;
                 }
             }
             bX += bSX; bY += bSY;
-            if (bX - bRad < 0 || bX + bRad > canvas.width) { bSX *= -1; playSfx(150, 0.05, 0.05); }
+            if (bX - bRad < 0 || bX + bRad > canvas.width) { 
+                bSX *= -1; 
+                if (Math.abs(bSY) < 3) bSY = bSY < 0 ? -3 : 3;
+                playSfx(150, 0.05, 0.05); 
+            }
             if (bY + bRad > canvas.height - 30 && bX > pBX && bX < pBX + pLen && bSY > 0) {
                 bSY = -Math.abs(bSY) * 1.05; 
                 bSX += (bX - (pBX + pLen/2)) / 8;
                 if (Math.abs(bSX) < 2) bSX = bSX < 0 ? -2 : 2;
+                if (Math.abs(bSY) < 3) bSY = -3;
+                showTouchIndicator(bX, canvas.height - 30);
                 playSfx(300, 0.1, 0.1);
             }
             if (bY - bRad < 30 && bX > pTX && bX < pTX + pLen && bSY < 0) {
                 bSY = Math.abs(bSY) * 1.05; 
                 bSX += (bX - (pTX + pLen/2)) / 8;
                 if (Math.abs(bSX) < 2) bSX = bSX < 0 ? -2 : 2;
+                if (Math.abs(bSY) < 3) bSY = 3;
+                showTouchIndicator(bX, 30);
                 playSfx(300, 0.1, 0.1);
             }
             if (bY < 0) { sB++; resetBall(); playSfx(440, 0.2, 0.1); }
@@ -264,7 +311,7 @@
             
             // Court Lines
             ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(0, 325); ctx.lineTo(400, 325); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 285); ctx.lineTo(400, 285); ctx.stroke();
             
             // The M.A. Signature
             ctx.save();
